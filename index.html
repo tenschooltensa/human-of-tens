@@ -293,14 +293,15 @@ function goiMayChu(fn, args, xong, loi, soLan) {
   var lan = 0, toiDa = soLan || 1;
   var thu = function () {
     lan++;
-    var dk = null, hen = null;
-    if (toiDa > 1 && typeof AbortController != 'undefined') { dk = new AbortController(); hen = setTimeout(function () { dk.abort(); }, 25000); }
+    // Giới hạn chờ: đọc 25 giây (rồi gửi lại), ghi 60 giây (không gửi lại). Không để vòng xoay quay mãi.
+    var dk = null, hen = null, hetGio = false;
+    if (typeof AbortController != 'undefined') { dk = new AbortController(); hen = setTimeout(function () { hetGio = true; dk.abort(); }, toiDa > 1 ? 25000 : 60000); }
     fetch(API, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args }), redirect: 'follow', signal: dk ? dk.signal : undefined })
       .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
       .then(function (kq) { clearTimeout(hen); xong(kq); })
       .catch(function (e) {
         clearTimeout(hen);
-        if (lan < toiDa) setTimeout(thu, Math.min(8000, 1500 * lan)); else loi(e);
+        if (lan < toiDa) setTimeout(thu, Math.min(8000, 1500 * lan)); else loi({ hetGio: hetGio, loi: e });
       });
   };
   thu();
@@ -308,7 +309,12 @@ function goiMayChu(fn, args, xong, loi, soLan) {
 function goi(ham, args, xong, loi, soLan) {
   hienTai(true);
   goiMayChu(ham, args, function (kq) { hienTai(false); xong(kq); },
-    function (e) { hienTai(false); (loi || toast)('Mất kết nối, thử lại.'); }, soLan);
+    function (e) { hienTai(false); (loi || toast)(thongBaoLoiMang(e), e); }, soLan);
+}
+var GHI_NHAC = { guiDon: 'Bạn mở mục Đơn của tôi kiểm tra đơn đã lên chưa rồi mới gửi lại, tránh trùng đơn.', xepCa_luu: 'Bạn tải lại lịch để kiểm tra đã lưu chưa.', xepCa_chot: 'Bạn tải lại lịch để kiểm tra đã chốt chưa.' };
+function thongBaoLoiMang(e, hanhDong) {
+  if (e && e.hetGio) return 'Máy chủ chưa phản hồi sau 60 giây. ' + (GHI_NHAC[hanhDong] || 'Bạn kiểm tra lại kết quả trước khi thao tác tiếp.');
+  return 'Mất kết nối, thử lại.';
 }
 function api(hanhDong, duLieu, xong, imLang, khiLoi) {
   var cb = function (kq) {
@@ -316,9 +322,9 @@ function api(hanhDong, duLieu, xong, imLang, khiLoi) {
     if (!kq || !kq.ok) { if (khiLoi) khiLoi(kq || {}); else toast((kq && kq.loi) || 'Có lỗi, thử lại.'); return; }
     xong(kq.data !== undefined ? kq.data : kq, kq);
   };
-  var loiMang = function () { if (khiLoi) khiLoi({ loi: 'Mất kết nối, thử lại.' }); else if (!imLang) toast('Mất kết nối, thử lại.'); };
+  var loiMang = function (t, e) { var m = thongBaoLoiMang(e, hanhDong); if (khiLoi) khiLoi({ loi: m }); else if (!imLang) toast(m); };
   var soLan = DOC_LAI[hanhDong] ? 3 : 1;
-  if (imLang) goiMayChu('api', [S.token, hanhDong, duLieu], cb, loiMang, soLan);
+  if (imLang) goiMayChu('api', [S.token, hanhDong, duLieu], cb, function (e) { loiMang('', e); }, soLan);
   else goi('api', [S.token, hanhDong, duLieu], cb, loiMang, soLan);
 }
 function luu(k, v) { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} }
@@ -364,7 +370,14 @@ function guiMa() {
     luu('hot_mail', m);
     $('moTaMa').textContent = 'Mã đã gửi tới ' + m + ', có hiệu lực 10 phút. Kiểm tra cả mục Thư rác nếu chưa thấy.';
     $('buocMail').classList.add('an'); $('buocMa').classList.remove('an'); $('oMa').focus();
-  }, function (t) { $('loiDN').textContent = t; });
+  }, function (t, e) {
+    if (e && e.hetGio) {
+      // Máy chủ có thể đã gửi mail nhưng phản hồi chậm: vẫn cho nhập mã
+      luu('hot_mail', m);
+      $('moTaMa').textContent = 'Máy chủ phản hồi chậm. Nếu mail ' + m + ' đã nhận được mã thì nhập mã bên dưới. Chưa nhận sau vài phút thì bấm "Đổi mail khác" để gửi lại.';
+      $('buocMail').classList.add('an'); $('buocMa').classList.remove('an'); $('oMa').focus();
+    } else $('loiDN').textContent = t;
+  });
 }
 function xacNhan() {
   var m = $('oMail').value.trim(), ma = $('oMa').value.trim();
