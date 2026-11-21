@@ -319,7 +319,7 @@ body:has(#noiDung .sk) #tai .xoay{display:none}
 .xcTuan{display:inline-flex;align-items:center;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-6);height:36px;padding:0 2px}
 .xcTuan .btn{width:32px;height:32px;padding:0}
 .xcTuan b{font-weight:var(--w-5);font-size:var(--fs-13);min-width:104px;text-align:center;font-variant-numeric:tabular-nums}
-.xcNut{display:flex;gap:var(--s-2);margin-left:auto}
+.xcNut{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:var(--s-2);margin-left:auto}
 .luuTT{display:inline-flex;align-items:center;gap:6px;color:var(--text-3);font-size:var(--fs-13);min-height:20px}
 .luuTT .ic{width:16px;height:16px}
 .luuTT.da .ic{color:var(--ok)}.luuTT.loi{color:var(--err-text)}
@@ -341,12 +341,16 @@ body:has(#noiDung .sk) #tai .xoay{display:none}
 .xcLuoi td.sua{cursor:pointer}
 .xcLuoi td.sua:hover{background:var(--n-25)}
 .xcLuoi tr.off td,.xcLuoi tr.off th{background:var(--n-50)}
-.chipXC{display:flex;align-items:flex-start;gap:4px;min-height:24px;padding:3px 4px 3px 6px;margin-bottom:4px;border-radius:var(--r-4);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-strong);font-size:var(--fs-12);line-height:var(--lh-12);color:var(--text);position:relative}
+/* Mỗi nhân viên một màu (--c-bg nền, --c-ln viền, --c-fg chữ); lỗi = viền đỏ 2px + icon cảnh báo */
+.chipXC{display:flex;align-items:flex-start;gap:4px;min-height:24px;padding:3px 4px 3px 6px;margin-bottom:4px;border-radius:var(--r-4);background:var(--c-bg,var(--surface));box-shadow:inset 0 0 0 1px var(--c-ln,var(--line-strong));font-size:var(--fs-12);line-height:var(--lh-12);color:var(--c-fg,var(--text));font-weight:var(--w-5);position:relative}
 .chipXC>span{flex:1;min-width:0;padding-top:1px;overflow-wrap:break-word}
-.xcLuoi .chipXC .bo{position:absolute;right:2px;top:2px;margin:0;background:inherit;box-shadow:-4px 0 4px -2px var(--surface)}
-.xcLuoi .chipXC.sai .bo{box-shadow:none}
+.xcLuoi .chipXC .bo{position:absolute;right:2px;top:2px;margin:0;background:var(--c-bg,var(--surface));box-shadow:-4px 0 4px -2px var(--c-bg,var(--surface));color:var(--c-fg,var(--text-3))}
+.chipXC .bo{color:var(--c-fg,var(--text-3))}
+.chipXC .bo:hover{background:rgba(255,255,255,.6)}
 .chipXC>.ic{margin-top:3px}
-.chipXC.sai{background:var(--err-bg);box-shadow:inset 0 0 0 1px var(--err-line);color:var(--err-text)}
+.chipXC.sai{box-shadow:inset 0 0 0 2px var(--err)}
+.chipXC.sai>.ic{color:var(--err)}
+.chamMau{display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--c-bg);box-shadow:inset 0 0 0 1px var(--c-ln);margin-right:6px;vertical-align:1px}
 .chipXC .bo{width:20px;height:20px;margin:-1px -2px -1px 0;border-radius:var(--r-4);display:grid;place-items:center;color:var(--text-3);flex:none;opacity:0;transition:opacity var(--t-fast),background-color var(--t-fast)}
 .chipXC:hover .bo,.chipXC .bo:focus-visible{opacity:1}
 .chipXC .bo:hover{background:var(--n-100);color:var(--text)}
@@ -503,7 +507,8 @@ body:has(#noiDung .sk) #tai .xoay{display:none}
 <symbol id="i-cloudCheck" viewBox="0 0 24 24"><path d="m17 15-5.5 5.5L9 18"/><path d="M5 17.743A7 7 0 1 1 15.71 10h1.79a4.5 4.5 0 0 1 1.5 8.742"/></symbol>
 <symbol id="i-external" viewBox="0 0 24 24"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></symbol>
 <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></symbol>
-<symbol id="i-pencil" viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></symbol>
+<symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><path d="M10 11v6"/><path d="M14 11v6"/></symbol>
+<symbol id="i-pencil"viewBox="0 0 24 24"><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/></symbol>
 </svg>
 
 <!-- MÀN CHỜ: hiện sẵn, JS chạy được thì tự ẩn. Nếu trình duyệt không chạy được app, người dùng vẫn thấy hướng dẫn thay vì trang trắng. -->
@@ -1090,16 +1095,28 @@ function loiXep() {
   x.nhanVien.forEach(function (nv) { var c = chuanCua(nv), n = demCa(nv.ten); if (c && n > c) ds.push({ muc: 'vang', t: '<b>' + e(nv.ten) + '</b> dư ' + (n - c) + ' ca (' + n + '/' + c + '). Chỉ lưu ý.' }); });
   return { ds: ds, viTri: viTri, soDo: ds.filter(function (o) { return o.muc == 'do'; }).length };
 }
+// Mỗi nhân viên một màu cố định theo thứ tự trong danh sách team (nền nhạt, chữ đậm, đạt tương phản AA). Không dùng đỏ để không lẫn với lỗi.
+var MAU_NV = [['#DCEBFE', '#B3D1F7', '#1E4E8C'], ['#DAF3E1', '#ADE2BD', '#17633A'], ['#FCEFCB', '#F2D68A', '#7A4A06'], ['#ECE3FA', '#D2BFF2', '#5B2E91'],
+  ['#D3F0EC', '#A3DDD5', '#0F5E58'], ['#FBE3EF', '#F2BCD7', '#8A1F5C'], ['#FCE6D4', '#F5C6A0', '#8A3B0C'], ['#E1E4FA', '#BDC3F2', '#333C8F'],
+  ['#E8F3D0', '#C9E19A', '#46600F'], ['#D6EEF7', '#A7D6EA', '#0E5873'], ['#EFE4D9', '#D8C2AC', '#6B4423'], ['#E4E9EF', '#C3CDD8', '#36475A'],
+  ['#F5DFF8', '#E2B5EA', '#7A2585'], ['#EEEDD3', '#D6D3A0', '#5C5A12']];
+function mauNV(ten) {
+  var ds = (S.xc && S.xc.data && S.xc.data.nhanVien) || [], i = -1;
+  for (var k = 0; k < ds.length; k++) if (ds[k].ten == ten) { i = k; break; }
+  if (i < 0) { i = 0; for (var j = 0; j < ten.length; j++) i = (i * 31 + ten.charCodeAt(j)) % 997; }
+  var m = MAU_NV[i % MAU_NV.length];
+  return '--c-bg:' + m[0] + ';--c-ln:' + m[1] + ';--c-fg:' + m[2];
+}
 function chip(ten, ma, d, sai, hieuUng) {
   var bo = suaDuoc() ? '<button class="bo" aria-label="Bỏ ' + e(ten) + '" onclick="event.stopPropagation();boNguoi(\'' + ma + '\',' + d + ',\'' + e(ten).replace(/'/g, '&#39;') + '\')">' + I('x', 'ic-14') + '</button>' : '';
-  return '<span class="chipXC' + (sai ? ' sai' : '') + (hieuUng ? ' ' + hieuUng : '') + '" title="' + e(ten) + (sai ? ' – cần xem lại' : '') + '">' + (sai ? I('alert', 'ic-12') : '') + '<span>' + e(ten) + '</span>' + bo + '</span>';
+  return '<span class="chipXC' + (sai ? ' sai' : '') + (hieuUng ? ' ' + hieuUng : '') + '" style="' + mauNV(ten) + '" title="' + e(ten) + (sai ? ' – cần xem lại' : '') + '">' + (sai ? I('alert', 'ic-12') : '') + '<span>' + e(ten) + '</span>' + bo + '</span>';
 }
 function mauNhat(t) { var c = mauAv(t); return c + '1F'; }
 // Hiệu ứng thêm/bỏ tên: so với lần vẽ trước (chỉ là hiển thị, không đổi dữ liệu)
 function chipO(xc, ma, d, L) {
   var ds = xc.luoi[ma][d], truoc = S._xcTruoc && S._xcTruoc.k == xc.team + '|' + xc.tuan ? S._xcTruoc.luoi[ma][d] : null;
   var h = ds.map(function (t) { return chip(t, ma, d, L.viTri[ma + '|' + d + '|' + t], truoc && truoc.indexOf(t) < 0 ? 'vao2' : ''); }).join('');
-  if (truoc) truoc.forEach(function (t) { if (ds.indexOf(t) < 0) h += '<span class="chipXC ra" aria-hidden="true"><span>' + e(t) + '</span></span>'; });
+  if (truoc) truoc.forEach(function (t) { if (ds.indexOf(t) < 0) h += '<span class="chipXC ra" aria-hidden="true" style="' + mauNV(t) + '"><span>' + e(t) + '</span></span>'; });
   return h;
 }
 function veXep() {
@@ -1110,6 +1127,7 @@ function veXep() {
   if (S.d.xepCa.length > 1) h += '<div class="loc" role="tablist" aria-label="Team">' + S.d.xepCa.map(function (t) { return '<button role="tab" aria-selected="' + (t == x.team) + '" class="' + (t == x.team ? 'on' : '') + '" onclick="di(\'xep\',{team:\'' + t + '\',tuan:\'' + x.tuan + '\'})">' + t + '</button>'; }).join('') + '</div>';
   h += '<div class="xcTuan"><button class="btn btn-ghost" aria-label="Tuần trước" onclick="di(\'xep\',{team:\'' + x.team + '\',tuan:\'' + congK(x.tuan, -7) + '\'})">' + I('left', 'ic-16') + '</button><b>' + dn(x.tuan) + ' – ' + dn(congK(x.tuan, 6)) + '</b><button class="btn btn-ghost" aria-label="Tuần sau" onclick="di(\'xep\',{team:\'' + x.team + '\',tuan:\'' + congK(x.tuan, 7) + '\'})">' + I('right', 'ic-16') + '</button></div>';
   h += '<div class="xcNut">';
+  if (sua) h += '<button class="btn btn-danger" onclick="xoaCaTuan()"' + (coTenTuan() ? '' : ' disabled') + '>' + I('trash', 'ic-16') + 'Xóa cả tuần</button>';
   if (sua) h += '<button class="btn btn-secondary" onclick="chepTuanTruoc()">' + I('copy', 'ic-16') + 'Chép tuần trước</button>';
   if (x.chot.daChot) h += '<span class="badge b-ok" style="height:28px">' + I('lock') + 'Đã chốt ' + e(x.chot.luc) + '</span>';
   else if (sua) h += '<button class="btn btn-primary" onclick="chotLich()">' + I('lock', 'ic-16') + 'Chốt lịch tuần</button>';
@@ -1156,7 +1174,7 @@ function veXep() {
     x.nhanVien.map(function (nv) {
       var c = chuanCua(nv), n = demCa(nv.ten);
       var tt = !c ? '<span class="muted">–</span>' : n < c ? '<span class="tt-thieu">Thiếu ' + (c - n) + '</span>' : n > c ? '<span class="tt-du">Dư ' + (n - c) + '</span>' : '<span class="tt-du3">Đủ</span>';
-      return '<div class="demXC"><span>' + e(nv.ten) + '</span><small>' + e(nv.doiTuong) + '</small><b>' + n + (c ? '/' + c : '') + '</b>' + tt + '</div>';
+      return '<div class="demXC"><span><i class="chamMau" style="' + mauNV(nv.ten) + '"></i>' + e(nv.ten) + '</span><small>' + e(nv.doiTuong) + '</small><b>' + n + (c ? '/' + c : '') + '</b>' + tt + '</div>';
     }).join('') + '<div style="height:6px"></div></div>';
   var soVang = L.ds.length - L.soDo;
   var loi = '<div class="the"><div class="theDau">Cần xem trước khi chốt' + (L.soDo ? '<span class="badge b-no">' + I('alert') + L.soDo + ' lỗi</span>' : soVang ? '<span class="badge b-wait">' + soVang + ' lưu ý</span>' : '<span class="badge b-ok">' + I('check') + 'Ổn</span>') + '</div>' +
@@ -1174,7 +1192,7 @@ function moChon(ma, d) {
   h.innerHTML = '<div class="bang2"><h4 id="hdTieuDe">Thêm vào ' + e(g.ten) + ' · ' + TEN_THU[d] + ' ' + dn(x.ngay[d]) + '</h4><p class="moTa">Còn ' + con + ' chỗ. Người đang thiếu ca ở trên cùng.</p><div class="dsChon">' +
     ds.map(function (o, i) {
       var tt = o.ly ? '<em style="color:' + (o.ly == 'Đã xếp' ? 'var(--text-3)' : 'var(--err-text)') + '">' + o.ly + '</em>' : !o.c ? '<em class="muted">' + o.n + ' ca</em>' : o.n < o.c ? '<em style="color:var(--err-text)">Thiếu ' + (o.c - o.n) + '</em>' : o.n > o.c ? '<em style="color:var(--text-2)">Dư ' + (o.n - o.c) + '</em>' : '<em class="muted">Đủ ca</em>';
-      return '<label class="itChon' + (o.ly ? ' tat' : '') + '"><input type="checkbox" value="' + e(o.nv.ten) + '"' + (o.ly ? ' disabled' : '') + ' onchange="demChon(' + con + ')"><div class="av">' + vietTat(o.nv.ten) + '</div><div class="tt"><b>' + e(o.nv.ten) + '</b><span>' + e(o.nv.doiTuong) + ' · ' + o.n + (o.c ? '/' + o.c : '') + ' ca chính</span></div>' + tt + '</label>';
+      return '<label class="itChon' + (o.ly ? ' tat' : '') + '"><input type="checkbox" value="' + e(o.nv.ten) + '"' + (o.ly ? ' disabled' : '') + ' onchange="demChon(' + con + ')"><div class="av" style="' + mauNV(o.nv.ten) + ';background:var(--c-bg);color:var(--c-fg);box-shadow:inset 0 0 0 1px var(--c-ln)">' + vietTat(o.nv.ten) + '</div><div class="tt"><b>' + e(o.nv.ten) + '</b><span>' + e(o.nv.doiTuong) + ' · ' + o.n + (o.c ? '/' + o.c : '') + ' ca chính</span></div>' + tt + '</label>';
     }).join('') + '</div><div class="haiNut"><button class="btn btn-secondary" onclick="dongHoi()">Thôi</button><button class="btn btn-primary" id="nutChon" disabled onclick="themNguoi(\'' + ma + '\',' + d + ')">Chọn người</button></div></div>';
   moHop();
 }
@@ -1250,6 +1268,16 @@ function chepTuanTruoc() {
     var coTen = x.nhom.some(function (g) { return S.xc.luoi[g.ma].some(function (ds) { return ds.length; }); });
     var lam = function () { S.xc.luoi = saoChep(p.luoi); daDoi(); toast('Đã chép lịch tuần ' + dn(congK(tuan, -7)) + '. Sửa lại cho tuần này.'); };
     if (coTen) hoi('Chép tuần trước?', 'Lịch hiện tại của tuần này sẽ bị thay bằng lịch tuần trước.', false, lam); else lam();
+  });
+}
+function coTenTuan() { return S.xc.data.nhom.some(function (g) { return S.xc.luoi[g.ma].some(function (ds) { return ds.length; }); }); }
+// Xóa toàn bộ tên trong tuần đang xem để xếp lại. Lưu như khi bỏ từng tên (tự lưu; sau chốt thì phải bấm "Lưu thay đổi").
+function xoaCaTuan() {
+  if (!suaDuoc() || !coTenTuan()) return;
+  var x = S.xc.data;
+  hoi('Xóa cả tuần?', 'Toàn bộ tên trong lịch ' + x.team + ' tuần ' + dn(x.tuan) + ' – ' + dn(congK(x.tuan, 6)) + ' sẽ bị xóa để xếp lại.' + (x.chot.daChot ? '\nLịch đã chốt: sau khi xóa, bấm "Lưu thay đổi" để lưu và báo chị Ngọc, chị Trang.' : '\nApp tự lưu ngay sau khi xóa, không hoàn tác được.'), false, function () {
+    x.nhom.forEach(function (g) { S.xc.luoi[g.ma] = [[], [], [], [], [], [], []]; });
+    daDoi(); toast('Đã xóa lịch tuần ' + dn(x.tuan) + '. Bạn xếp lại từ đầu.');
   });
 }
 function chotLich() {
