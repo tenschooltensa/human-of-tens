@@ -734,7 +734,9 @@ function cacMuc() {
   var h = S.d.hoSo, m = [{ k: 'home', t: 'Trang chủ', ic: 'home' }, { k: 'lich', t: 'Lịch ca', ic: 'calendar' }, { k: 'gui', t: 'Gửi đơn', ic: 'plus' }, { k: 'don', t: 'Đơn của tôi', ic: 'file' }];
   if (h.laDuyet) m.push({ k: 'duyet', t: 'Duyệt đơn', ic: 'approve', so: S.d.choDuyet });
   if (S.d.xepCa && S.d.xepCa.length) m.push({ k: 'xep', t: 'Xếp ca', ic: 'grid' });
-  if (h.laQuanTri) { m.push({ k: 'tq', t: 'Tổng quan', ic: 'chart' }); m.push({ k: 'tb', t: 'Thông báo', ic: 'bell', so: S.d.thongBaoMoi }); }
+  if (h.laQuanTri) m.push({ k: 'tq', t: 'Tổng quan', ic: 'chart' });
+  // Thông báo: Quản lý/HCKT/GĐ (sửa lịch sau chốt), Lead (đơn của team: gửi mới, được duyệt, bị hủy)
+  if (h.laQuanTri || h.laLead) m.push({ k: 'tb', t: 'Thông báo', ic: 'bell', so: S.d.thongBaoMoi });
   m.push({ k: 'toi', t: 'Tôi', ic: 'user' });
   return m;
 }
@@ -763,7 +765,8 @@ function ve() {
     '<div class="toi"><div class="av">' + vietTat(h.ten) + '</div><div class="tt" onclick="di(\'toi\')">' + e(h.ten) + '<span>' + e(h.vaiTro) + ' · ' + e(h.team) + '</span></div>' +
     '<button class="btn btn-ghost btn-icon" onclick="dangXuat()" aria-label="Đăng xuất" title="Đăng xuất">' + I('logout', 'ic-16') + '</button></div>';
   // nav dưới: tối đa 5 nút
-  var duoi = [m[0], m[1], m[2], h.laDuyet ? m.filter(function (x) { return x.k == 'duyet'; })[0] : m[3], m[m.length - 1]];
+  var muc4 = h.laDuyet ? 'duyet' : h.laLead ? 'tb' : 'don';
+  var duoi = [m[0], m[1], m[2], m.filter(function (x) { return x.k == muc4; })[0], m[m.length - 1]];
   $('navDuoi').innerHTML = duoi.map(function (x) {
     if (x.k == 'gui') return '<button onclick="di(\'gui\')" class="' + (S.trang == 'gui' ? 'on' : '') + '"><span class="o2">' + I('plus') + '</span>Gửi đơn</button>';
     var on = S.trang == x.k || (x.k == 'toi' && ['don', 'tq', 'toi', 'tb', 'xep'].indexOf(S.trang) >= 0 && !duoi.some(function (y) { return y.k == S.trang; }));
@@ -771,7 +774,8 @@ function ve() {
   }).join('');
   // header
   var dau = '<div class="thanh">' + logoHinh() + '<div class="tenApp">Human of <span>TENS</span></div>' +
-    (h.laDuyet ? '<button class="btn btn-ghost btn-icon" onclick="di(\'duyet\')" aria-label="Đơn chờ duyệt' + (S.d.choDuyet ? ', ' + S.d.choDuyet + ' đơn' : '') + '">' + I('bell') + (S.d.choDuyet ? '<i class="dem">' + S.d.choDuyet + '</i>' : '') + '</button>' : '') + '</div>';
+    (h.laDuyet ? '<button class="btn btn-ghost btn-icon" onclick="di(\'duyet\')" aria-label="Đơn chờ duyệt' + (S.d.choDuyet ? ', ' + S.d.choDuyet + ' đơn' : '') + '">' + I('bell') + (S.d.choDuyet ? '<i class="dem">' + S.d.choDuyet + '</i>' : '') + '</button>'
+      : h.laLead ? '<button class="btn btn-ghost btn-icon" onclick="di(\'tb\')" aria-label="Thông báo' + (S.d.thongBaoMoi ? ', ' + S.d.thongBaoMoi + ' mới' : '') + '">' + I('bell') + (S.d.thongBaoMoi ? '<i class="dem">' + S.d.thongBaoMoi + '</i>' : '') + '</button>' : '') + '</div>';
   var tieuDe = { lich: 'Lịch ca của tôi', gui: 'Gửi đơn', don: 'Đơn của tôi', duyet: 'Duyệt đơn', tq: 'Tổng quan', toi: 'Tài khoản', xep: 'Xếp ca', tb: 'Thông báo' }[S.trang];
   if (S.trang == 'home') {
     var gio = new Date().getHours();
@@ -827,6 +831,7 @@ function veHome() {
     }).join('') + '</div>' +
     '<h2 class="muc">Ca sắp tới <a onclick="di(\'lich\')">Lịch tuần ' + I('right', 'ic-16') + '</a></h2><div class="the">' + veCaList(d.lich, 4) + '</div></div>' +
     '<div><h2 class="muc">Đơn gần đây <a onclick="di(\'don\')">Tất cả ' + I('right', 'ic-16') + '</a></h2><div class="the">' + veDonList(d.donCuaToi.slice(0, 5), true) + '</div>' +
+    (d.hoSo.laLead && !d.hoSo.laDuyet ? '<h2 class="muc">Đơn của team</h2><div class="the"><div class="dong bam" onclick="di(\'tb\')"><div class="ibox">' + I('bell') + '</div><div class="tt"><b>' + (d.thongBaoMoi ? d.thongBaoMoi + ' thông báo mới' : 'Thông báo đơn của team') + '</b><span>Bạn trong team gửi đơn, đơn được duyệt hoặc bị hủy</span></div>' + I('right') + '</div></div>' : '') +
     (d.hoSo.laDuyet && d.choDuyet ? '<h2 class="muc">Việc cần làm</h2><div class="the"><div class="dong bam" onclick="di(\'duyet\')"><div class="ibox">' + I('approve') + '</div><div class="tt"><b>' + d.choDuyet + ' đơn đang chờ bạn duyệt</b><span>Bấm để xem và duyệt</span></div>' + I('right') + '</div></div>' : '') +
     (d.xepCa && d.xepCa.length ? '<h2 class="muc">Xếp ca</h2><div class="the"><div class="dong bam" onclick="di(\'xep\')"><div class="ibox">' + I('grid') + '</div><div class="tt"><b>Xếp ca ' + e(d.xepCa.join(', ')) + '</b><span>Lưới tuần, tự đếm ca, báo lỗi trước khi chốt</span></div>' + I('right') + '</div></div>' : '') +
     '</div></div>';
@@ -865,7 +870,7 @@ function veGui() {
       S.d.dongNghiep.map(function (n) { return '<option value="' + n.ma + '"' + (d.doiVoi == n.ma ? ' selected' : '') + '>' + e(n.ten) + '</option>'; }).join('') + '</select>' +
       '<label class="nhan">Ca nhận lại</label><div class="hai"><input type="date" class="o" aria-label="Ngày nhận ca" value="' + (d.ngayMoi || d.tu || '') + '" onchange="datDon(\'ngayMoi\',this.value)"><select class="o" aria-label="Ca nhận" onchange="datDon(\'caMoi\',this.value)"><option value="">Không nhận ca</option>' +
       ca.map(function (c) { return '<option' + (d.caMoi == c ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select></div>' +
-      note('info', 'info', 'Hai bạn tự thống nhất trước khi gửi. Lead duyệt là đủ, lịch tự cập nhật cho cả hai.');
+      note('info', 'info', 'Hai bạn tự thống nhất trước khi gửi. Chị Ngọc hoặc chị Trang duyệt là đủ, lịch tự cập nhật cho cả hai. Lead của team được báo.');
   } else if (d.loai == 'Xin đi muộn') {
     h += '<label class="nhan" for="oTu">Ngày</label><input id="oTu" type="date" class="o" value="' + (d.tu || '') + '" onchange="datDon(\'tu\',this.value)">' +
       '<div class="hai"><div><label class="nhan" for="oCa">Ca bị muộn</label><select id="oCa" class="o" onchange="datDon(\'caCu\',this.value)"><option value="">Chọn ca</option>' + S.d.danhSachCa.map(function (c) { return '<option' + (d.caCu == c ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select></div>' +
@@ -885,9 +890,9 @@ function veGui() {
     k.loi.forEach(function (t) { h += note('err', 'xCircle', e(t)); });
     k.canhBao.forEach(function (t) { h += note('warn', 'alert', e(t)); });
   }
-  var nguoiDuyet = k && k.canDuyet ? (k.canDuyet == 'Quản lý' ? 'chị Ngọc' : k.canDuyet) : 'người duyệt';
+  var nguoiDuyet = k && k.canDuyet ? (/Quản lý/.test(k.canDuyet) ? 'chị Ngọc, chị Trang' : k.canDuyet) : '';
   if (S.dangKT) h += '<div class="dangKT" role="status"><span class="xoayNho"></span>Đang kiểm tra quy định...</div>';
-  h += '<div class="dinhNut"><button class="btn btn-primary btn-lg btn-block" ' + (!k || k.loi.length || S.dangKT ? 'disabled' : '') + ' onclick="guiDon()">Gửi đơn cho ' + e(nguoiDuyet) + ' duyệt</button></div></div>';
+  h += '<div class="dinhNut"><button class="btn btn-primary btn-lg btn-block" ' + (!k || k.loi.length || S.dangKT ? 'disabled' : '') + ' onclick="guiDon()">' + (nguoiDuyet ? 'Gửi đơn cho ' + e(nguoiDuyet) + ' duyệt' : 'Gửi đơn') + '</button></div></div>';
   return h;
 }
 function datDon(k, v) {
@@ -1021,7 +1026,7 @@ function veToi() {
     dong('file', 'Đơn của tôi và phép năm', 'di(\'don\')') +
     (h.laQuanTri ? dong('chart', 'Tổng quan chấm công', 'di(\'tq\')') : '') +
     (S.d.xepCa && S.d.xepCa.length ? dong('grid', 'Xếp ca ' + e(S.d.xepCa.join(', ')), 'di(\'xep\')') : '') +
-    (h.laQuanTri ? dong('bell', 'Thông báo', 'di(\'tb\')', S.d.thongBaoMoi ? S.d.thongBaoMoi + ' thông báo mới' : '') : '') +
+    (h.laQuanTri || h.laLead ? dong('bell', 'Thông báo', 'di(\'tb\')', S.d.thongBaoMoi ? S.d.thongBaoMoi + ' thông báo mới' : '') : '') +
     dong('logout', 'Đăng xuất', 'dangXuat()', '', 'var(--err-text)') + '</div>' +
     note('info', 'info', 'Thông tin sai (phòng ban, FT/PT, ngày ký chính thức) bạn báo Hành chính để cập nhật.') + '</div>';
 }
@@ -1291,7 +1296,8 @@ function chotLich() {
 function veTB() {
   if (!S.tb) return '<div class="formRong">' + skDong(3) + '</div>';
   return '<div class="the formRong">' + (S.tb.ds.length ? S.tb.ds.map(function (t) {
-    return '<div class="dong" style="align-items:flex-start"><div class="ibox">' + I('pencil') + '</div><div class="tt"><b>' + e(t.loai) + ' <span class="muted num" style="display:inline;font-weight:400">· ' + e(t.luc) + '</span></b><span style="white-space:pre-line">' + e(t.noiDung) + '</span></div></div>';
+    var ic = /bị hủy/.test(t.loai) ? 'ban' : /được duyệt/.test(t.loai) ? 'checkCircle' : /Đơn mới/.test(t.loai) ? 'file' : 'pencil';
+    return '<div class="dong" style="align-items:flex-start"><div class="ibox">' + I(ic) + '</div><div class="tt"><b>' + e(t.loai) + ' <span class="muted num" style="display:inline;font-weight:400">· ' + e(t.luc) + '</span></b><span style="white-space:pre-line">' + e(t.noiDung) + '</span></div></div>';
   }).join('') : trong('bell', 'Chưa có thông báo nào trong 30 ngày', '')) + '</div>';
 }
 
