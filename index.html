@@ -870,7 +870,7 @@ function veGui() {
       S.d.dongNghiep.map(function (n) { return '<option value="' + n.ma + '"' + (d.doiVoi == n.ma ? ' selected' : '') + '>' + e(n.ten) + '</option>'; }).join('') + '</select>' +
       '<label class="nhan">Ca nhận lại</label><div class="hai"><input type="date" class="o" aria-label="Ngày nhận ca" value="' + (d.ngayMoi || d.tu || '') + '" onchange="datDon(\'ngayMoi\',this.value)"><select class="o" aria-label="Ca nhận" onchange="datDon(\'caMoi\',this.value)"><option value="">Không nhận ca</option>' +
       ca.map(function (c) { return '<option' + (d.caMoi == c ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select></div>' +
-      note('info', 'info', 'Hai bạn tự thống nhất trước khi gửi. Chị Ngọc hoặc chị Trang duyệt là đủ, lịch tự cập nhật cho cả hai. Lead của team được báo.');
+      note('info', 'info', 'Hai bạn tự thống nhất trước khi gửi. Chị Ngọc duyệt là đủ, lịch tự cập nhật cho cả hai. Lead của team được báo.');
   } else if (d.loai == 'Xin đi muộn') {
     h += '<label class="nhan" for="oTu">Ngày</label><input id="oTu" type="date" class="o" value="' + (d.tu || '') + '" onchange="datDon(\'tu\',this.value)">' +
       '<div class="hai"><div><label class="nhan" for="oCa">Ca bị muộn</label><select id="oCa" class="o" onchange="datDon(\'caCu\',this.value)"><option value="">Chọn ca</option>' + S.d.danhSachCa.map(function (c) { return '<option' + (d.caCu == c ? ' selected' : '') + '>' + c + '</option>'; }).join('') + '</select></div>' +
@@ -883,14 +883,18 @@ function veGui() {
     if (laNghi && k.soNgay) {
       h += '<div class="the tinh num"><div class="kv"><span>Số ngày nghỉ (trừ CN, ngày lễ)</span><b>' + so(k.soNgay) + ' ngày</b></div>';
       if (k.quy.coPhep && (d.loaiNghi == 'Nghỉ phép' || d.loaiNghi == 'Nghỉ ốm')) h += '<div class="kv"><span>Phép còn lại hiện tại</span><b>' + so(k.quy.conLai) + ' ngày</b></div><div class="kv"><span>Trừ phép</span><b>' + so(k.truPhep) + ' ngày</b></div>';
+      // 27/11: phần trừ vào phép năm khác (đơn vắt qua năm / nghỉ năm sau) không trừ vào phép còn lại năm nay
+      var truNamNay = k.truPhepNamNay != null && !k.tam ? k.truPhepNamNay : k.truPhep;
+      if (k.quy.coPhep && (d.loaiNghi == 'Nghỉ phép' || d.loaiNghi == 'Nghỉ ốm') && truNamNay != k.truPhep) h += '<div class="kv"><span>Trong đó trừ vào phép năm khác</span><b>' + so(k.truPhep - truNamNay) + ' ngày</b></div>';
       if (k.khongLuong) h += '<div class="kv"><span>Nghỉ không lương</span><b>' + so(k.khongLuong) + ' ngày</b></div>';
-      if (k.quy.coPhep && (d.loaiNghi == 'Nghỉ phép' || d.loaiNghi == 'Nghỉ ốm')) h += '<div class="kv tong"><span>Còn lại sau khi duyệt</span><b>' + so(Math.max(0, k.quy.conLai - k.truPhep)) + ' ngày</b></div>';
+      if (k.quy.coPhep && (d.loaiNghi == 'Nghỉ phép' || d.loaiNghi == 'Nghỉ ốm')) h += '<div class="kv tong"><span>Còn lại năm nay sau khi duyệt</span><b>' + so(Math.max(0, k.quy.conLai - truNamNay)) + ' ngày</b></div>';
       h += '</div>';
     }
     k.loi.forEach(function (t) { h += note('err', 'xCircle', e(t)); });
     k.canhBao.forEach(function (t) { h += note('warn', 'alert', e(t)); });
   }
-  var nguoiDuyet = k && k.canDuyet ? (/Quản lý/.test(k.canDuyet) ? 'chị Ngọc, chị Trang' : k.canDuyet) : '';
+  // 27/11: chị Ngọc (Quản lý) duyệt; đơn của chị Ngọc thì chị Trang (Hành chính - Kế toán) duyệt
+  var nguoiDuyet = k && k.canDuyet ? (/Quản lý/.test(k.canDuyet) && /Hành chính/.test(k.canDuyet) ? 'chị Ngọc, chị Trang' : /Quản lý/.test(k.canDuyet) ? 'chị Ngọc' : /Hành chính/.test(k.canDuyet) ? 'chị Trang' : k.canDuyet) : '';
   if (S.dangKT) h += '<div class="dangKT" role="status"><span class="xoayNho"></span>Đang kiểm tra quy định...</div>';
   h += '<div class="dinhNut"><button class="btn btn-primary btn-lg btn-block" ' + (!k || k.loi.length || S.dangKT ? 'disabled' : '') + ' onclick="guiDon()">' + (nguoiDuyet ? 'Gửi đơn cho ' + e(nguoiDuyet) + ' duyệt' : 'Gửi đơn') + '</button></div></div>';
   return h;
@@ -962,18 +966,25 @@ function veDon() {
 function veDuyet() {
   var x = S.duyet;
   if (!x) return '<div class="tabs"><button class="on">Chờ duyệt</button><button>Đã xử lý</button></div>' + skThe(3);
-  var tabs = [['cho', 'Chờ duyệt', x.cho.length], ['xong', 'Đã xử lý', 0]];
+  // 27/11: "Xem tất cả" (x.khac) = đơn chị Ngọc duyệt; chị Trang chỉ duyệt dự phòng khi chị Ngọc vắng
+  var khac = x.khac || [];
+  var tabs = [['cho', 'Chờ duyệt', x.cho.length]];
+  if (khac.length) tabs.push(['khac', 'Xem tất cả', 0]);
+  tabs.push(['xong', 'Đã xử lý', 0]);
   if (x.canGiay.length) tabs.push(['giay', 'Xác nhận giấy', x.canGiay.length]);
+  if (S.tabDuyet == 'khac' && !khac.length) S.tabDuyet = 'cho';
   var h = '<div class="tabs" role="tablist">' + tabs.map(function (t) { return '<button role="tab" aria-selected="' + (S.tabDuyet == t[0]) + '" class="' + (S.tabDuyet == t[0] ? 'on' : '') + '" onclick="S.tabDuyet=\'' + t[0] + '\';ve()">' + t[1] + (t[2] ? ' <em>' + t[2] + '</em>' : '') + '</button>'; }).join('') + '</div>';
-  if (S.tabDuyet == 'cho') {
-    if (!x.cho.length) return h + '<div class="the">' + trong('checkCircle', 'Không có đơn nào chờ duyệt', 'Đơn mới gửi tới bạn sẽ hiện ở đây.') + '</div>';
-    h += '<div class="dsDuyet"><div class="hdDuyet" aria-hidden="true"><span>Người gửi</span><span>Loại đơn</span><span>Thời gian</span><span>Lưu ý</span><span>Gửi lúc</span><span></span></div>' + x.cho.map(function (d) {
+  if (S.tabDuyet == 'cho' || S.tabDuyet == 'khac') {
+    var ds = S.tabDuyet == 'khac' ? khac : x.cho;
+    if (S.tabDuyet == 'khac') h += note('info', 'info', 'Đơn chị Ngọc duyệt (' + khac.length + ' đơn đang chờ). Chị chỉ cần duyệt khi chị Ngọc vắng.');
+    if (!ds.length) return h + '<div class="the">' + trong('checkCircle', 'Không có đơn nào chờ duyệt', 'Đơn mới gửi tới bạn sẽ hiện ở đây.') + '</div>';
+    h += '<div class="dsDuyet"><div class="hdDuyet" aria-hidden="true"><span>Người gửi</span><span>Loại đơn</span><span>Thời gian</span><span>Lưu ý</span><span>Gửi lúc</span><span></span></div>' + ds.map(function (d) {
       var them = '';
       if (d.conLai && d.conLai.coPhep) them += note('info', 'info', 'Phép còn lại của ' + e(d.ten.split(' ').pop()) + ': <b class="num">' + so(d.conLai.conLai) + ' ngày</b> (đã tính đơn này).');
       if (d.canhBaoMoi) them += note('err', 'alert', e(d.canhBaoMoi) + ' Bạn quyết định.');
       if (d.canhBao) them += /Ngoại lệ|muộn/.test(d.canhBao) ? note('warn', 'clock', e(d.canhBao)) : note('info', 'info', e(d.canhBao));
       if (d.trangThai == 'Chờ duyệt cấp 2') them += note('info', 'checkCircle', 'Lead đã duyệt: ' + e(d.nguoiDuyet) + '. Đang chờ duyệt cấp 2.');
-      return '<div class="the thDuyet"><div class="dau1"><div class="ai"><div class="av">' + vietTat(d.ten) + '</div><div class="tt"><b>' + e(d.ten) + '</b><span>' + e(d.team) + ' · ' + e(d.doiTuong) + '</span></div></div><span class="loaiDon">' + I(icLoai(d.loai)) + e(d.loai) + '</span></div>' +
+      return '<div class="the thDuyet"><div class="dau1"><div class="ai"><div class="av">' + vietTat(d.ten) + '</div><div class="tt"><b>' + e(d.ten) + '</b><span>' + e(d.team) + ' · ' + e(d.doiTuong) + (d.congTy == 'Fatima' ? ' · Fatima' : '') + '</span></div></div><span class="loaiDon">' + I(icLoai(d.loai)) + e(d.loai) + '</span></div>' +
         '<div class="noi"><div class="tg"><b>' + e(moTaDon(d)) + '</b>' + (d.lyDo ? '<div class="ly">Lý do: ' + e(d.lyDo) + '</div>' : '') + '</div>' +
         '<div class="luuY">' + them + '</div><div class="gui">Gửi ' + e(d.guiLuc) + '</div>' +
         '<div class="haiNut"><button class="btn btn-danger" onclick="tuChoi(\'' + d.maDon + '\')">Từ chối</button><button class="btn btn-primary" onclick="duyet(\'' + d.maDon + '\')">' + I('check', 'ic-16') + 'Duyệt</button></div></div></div>';
@@ -1001,19 +1012,29 @@ function xacNhanGiay(ma) { api('xacNhanGiay', { maDon: ma }, sauDuyet('Đã xác
 function veTQ() {
   var x = S.tq;
   if (!x) return '<div class="the kpis">' + [1, 2, 3, 4].map(function () { return '<div class="kpi"><span class="sk" style="width:60%;height:10px"></span><span class="sk" style="width:40%;height:24px;margin-top:10px"></span></div>'; }).join('') + '</div><div style="margin-top:16px">' + skDong(4) + '</div>';
-  var teams = ['Tất cả', 'Sale', 'CS', 'MKT', 'Chuyên môn'];
-  var nguoi = x.nguoi.filter(function (r) { return S.loc == 'Tất cả' || r.team == S.loc; });
+  var teams = ['Tất cả', 'Sale', 'CS', 'MKT', 'Chuyên môn', 'Fatima'];
+  // Nút "Fatima" lọc theo cột Công ty (nhân sự công ty Fatima, TENS quản lý chấm công), các nút khác lọc theo phòng ban
+  var laFa = S.loc == 'Fatima', fa = x.fatima || [];
+  var nguoi = x.nguoi.filter(function (r) { return S.loc == 'Tất cả' || (laFa ? r.congTy == 'Fatima' : r.team == S.loc); });
   var choTeam = Object.keys(x.choDuyetTheoTeam).map(function (t) { return x.choDuyetTheoTeam[t] + ' ' + t; }).join(' · ');
+  var nghin = function (n) { return String(n || 0).replace(/\B(?=(\d{3})+(?!\d))/g, ','); };
+  var tong = laFa && x.tongFatima ? { muon: nghin(x.tongFatima.muon), phut: nghin(x.tongFatima.phut), phat: nghin(x.tongFatima.phat), khongCham: nghin(x.tongFatima.khongCham) } : x.tong;
+  var nghi = laFa ? (x.nghiTuanFatima || []) : x.nghiTuan;
+  var theFa = !laFa ? '' : '<div class="the" style="margin-bottom:16px"><div class="theDau">Phép năm nhân sự Fatima <small>12 ngày/năm, cộng 1 ngày mỗi tháng đủ</small></div>' +
+    (fa.length ? '<div class="cuon"><table class="bang"><thead><tr><th>Nhân viên</th><th>Phòng</th><th class="r">Được cộng</th><th class="r">Tồn năm trước</th><th class="r">Đã dùng</th><th class="r">Chờ duyệt</th><th class="r">Còn lại</th></tr></thead><tbody>' +
+      fa.map(function (r) { return '<tr><td><b>' + e(r.ten) + '</b></td><td class="muted">' + e(r.team) + ' · ' + e(r.doiTuong) + '</td>' + (r.coPhep ? '<td class="r num">' + e(so(r.duocCong)) + '/' + e(so(r.toiDa)) + '</td><td class="r num">' + e(so(r.ton)) + '</td><td class="r num">' + e(so(r.daDung)) + '</td><td class="r num">' + e(so(r.dangCho)) + '</td><td class="r num"><b>' + e(so(r.conLai)) + '</b></td>' : '<td colspan="5" class="muted">' + e(r.lyDo) + '</td>') + '</tr>'; }).join('') +
+      '</tbody></table></div>' : trong('user', 'Chưa có nhân sự Fatima', 'Điền "Fatima" ở cột Công ty, tab Nhân viên.')) + '</div>';
   return '<div style="color:var(--text-3);margin:0 0 16px;font-size:13px;display:flex;flex-wrap:wrap;gap:4px 12px;align-items:center">' + e(x.tieuDe) + '<a href="' + x.linkSheet + '" target="_blank" rel="noopener" class="btn btn-link" style="font-size:13px">Mở file Quản trị nhân sự ' + I('external', 'ic-14') + '</a></div>' +
-    '<div class="the kpis"><div class="kpi canh"><div class="l">Lượt đi muộn</div><div class="n">' + e(x.tong.muon) + '</div><div class="s">' + e(x.tong.phut) + ' phút</div></div>' +
-    '<div class="kpi"><div class="l">Tiền phạt tạm tính</div><div class="n">' + e(x.tong.phat) + 'đ</div><div class="s">Chưa trừ đơn bổ sung</div></div>' +
-    '<div class="kpi loi"><div class="l">Ngày không chấm công</div><div class="n">' + e(x.tong.khongCham) + '</div><div class="s">Cần đối chiếu đơn</div></div>' +
+    '<div class="the kpis"><div class="kpi canh"><div class="l">Lượt đi muộn' + (laFa ? ' Fatima' : '') + '</div><div class="n">' + e(tong.muon) + '</div><div class="s">' + e(tong.phut) + ' phút</div></div>' +
+    '<div class="kpi"><div class="l">Tiền phạt tạm tính</div><div class="n">' + e(tong.phat) + 'đ</div><div class="s">Chưa trừ đơn bổ sung</div></div>' +
+    '<div class="kpi loi"><div class="l">Ngày không chấm công</div><div class="n">' + e(tong.khongCham) + '</div><div class="s">Cần đối chiếu đơn</div></div>' +
     '<div class="kpi bam" onclick="di(\'duyet\')"><div class="l">Đơn chờ duyệt</div><div class="n">' + x.choDuyet + '</div><div class="s">' + (e(choTeam) || 'Không có') + '</div></div></div>' +
+    (laFa ? '<div style="margin-top:24px">' + theFa + '</div>' : '') +
     '<div class="luoi2" style="margin-top:24px"><div class="the"><div class="theDau">Đi muộn và vắng theo người<div class="loc">' +
     teams.map(function (t) { return '<button class="' + (S.loc == t ? 'on' : '') + '" onclick="S.loc=\'' + t + '\';ve()">' + t + '</button>'; }).join('') + '</div></div>' +
     '<div class="cuon"><table class="bang"><thead><tr><th>Nhân viên</th><th>Phòng</th><th class="r">Lần muộn</th><th class="r">Phút</th><th class="r">Không chấm</th><th class="r">Vắng ca</th><th class="r">Phạt tạm tính</th></tr></thead><tbody>' +
-    (nguoi.length ? nguoi.map(function (r) { return '<tr><td><b>' + e(r.ten) + '</b></td><td class="muted">' + e(r.team) + ' · ' + e(r.doiTuong) + '</td><td class="r num">' + e(r.muon) + '</td><td class="r num">' + e(r.phut) + '</td><td class="r num">' + e(r.khongCham) + '</td><td class="r num">' + e(r.vang) + '</td><td class="r num"><b>' + e(r.phat) + '</b></td></tr>'; }).join('') : '<tr><td colspan="7">' + trong('checkCircle', 'Không có trường hợp nào', '') + '</td></tr>') +
-    '</tbody></table></div></div><div><div class="the"><div class="theDau">Nghỉ trong tuần</div>' + (x.nghiTuan.length ? x.nghiTuan.map(function (t) { return '<div class="cb">' + I('leave') + '<div>' + e(t) + '</div></div>'; }).join('') : trong('calendar', 'Không có ai nghỉ', '')) + '</div>' +
+    (nguoi.length ? nguoi.map(function (r) { return '<tr><td><b>' + e(r.ten) + '</b></td><td class="muted">' + e(r.team) + ' · ' + e(r.doiTuong) + (r.congTy == 'Fatima' ? ' · Fatima' : '') + '</td><td class="r num">' + e(r.muon) + '</td><td class="r num">' + e(r.phut) + '</td><td class="r num">' + e(r.khongCham) + '</td><td class="r num">' + e(r.vang) + '</td><td class="r num"><b>' + e(r.phat) + '</b></td></tr>'; }).join('') : '<tr><td colspan="7">' + trong('checkCircle', 'Không có trường hợp nào', '') + '</td></tr>') +
+    '</tbody></table></div></div><div><div class="the"><div class="theDau">Nghỉ trong tuần' + (laFa ? ' (Fatima)' : '') + '</div>' + (nghi.length ? nghi.map(function (t) { return '<div class="cb">' + I('leave') + '<div>' + e(t) + '</div></div>'; }).join('') : trong('calendar', 'Không có ai nghỉ', '')) + '</div>' +
     '<div class="the" style="margin-top:16px"><div class="theDau">Cảnh báo lịch ca</div>' + (x.canhBao.length ? x.canhBao.map(function (c) { return '<div class="cb do">' + I('alert') + '<div><b>' + e(c.ten) + '</b> · ' + e(c.vanDe) + '<span>' + e(c.team) + ' · tuần ' + e(c.tuan) + ' · ' + e(c.chiTiet) + '</span></div></div>'; }).join('') : trong('checkCircle', 'Không có cảnh báo', '')) + '</div></div></div>';
 }
 
